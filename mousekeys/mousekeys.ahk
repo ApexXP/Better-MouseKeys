@@ -2,8 +2,8 @@
 #SingleInstance Force
 InstallKeybdHook()
 
-; --- INITIAL CONFIGURATION & LOADING ---
-Global SettingsFile := A_ScriptDir "\ArrowMouseSettings.ini"
+; --- INITIAL CONFIGURATION & REGISTRY PATH ---
+Global RegPath := "HKEY_CURRENT_USER\Software\MouseKeysPro"
 Global IconPath := "C:\Users\felix\Desktop\mousekeys\mousekeys.ico"
 Global StartupShortcut := A_Startup "\MouseKeys.lnk"
 
@@ -11,24 +11,31 @@ Global StartupShortcut := A_Startup "\MouseKeys.lnk"
 Global DefStart := 2.0, DefMax := 18.0, DefAcc := 0.15, DefCurve := 1.2
 Global DefToggle := "CapsLock", DefUp := "Up", DefDown := "Down", DefLeft := "Left", DefRight := "Right", DefClick := "Space", DefRClick := "\"
 
-; Load Speed Settings
-Global NormalSpeed := Float(IniRead(SettingsFile, "Speed", "Start", DefStart))
-Global MaxSpeed := Float(IniRead(SettingsFile, "Speed", "Max", DefMax))
-Global Acceleration := Round(Float(IniRead(SettingsFile, "Speed", "Acc", DefAcc)), 2)
-Global AccCurve := Float(IniRead(SettingsFile, "Speed", "Curve", DefCurve))
+; Helper function to read Registry with a default fallback
+RegGet(ValueName, Default) {
+    try return RegRead(RegPath, ValueName)
+    catch
+        return Default
+}
+
+; Load Speed Settings from Registry
+Global NormalSpeed := Float(RegGet("Start", DefStart))
+Global MaxSpeed := Float(RegGet("Max", DefMax))
+Global Acceleration := Round(Float(RegGet("Acc", DefAcc)), 2)
+Global AccCurve := Float(RegGet("Curve", DefCurve))
 Global CurrentSpeed := NormalSpeed
 
-; Load Key Settings
-Global KeyToggle := IniRead(SettingsFile, "Keys", "Toggle", DefToggle)
-Global KeyUp := IniRead(SettingsFile, "Keys", "Up", DefUp)
-Global KeyDown := IniRead(SettingsFile, "Keys", "Down", DefDown)
-Global KeyLeft := IniRead(SettingsFile, "Keys", "Left", DefLeft)
-Global KeyRight := IniRead(SettingsFile, "Keys", "Right", DefRight)
-Global KeyClick := IniRead(SettingsFile, "Keys", "Click", DefClick)
-Global KeyRightClick := IniRead(SettingsFile, "Keys", "RClick", DefRClick)
+; Load Key Settings from Registry
+Global KeyToggle := RegGet("Toggle", DefToggle)
+Global KeyUp := RegGet("Up", DefUp)
+Global KeyDown := RegGet("Down", DefDown)
+Global KeyLeft := RegGet("Left", DefLeft)
+Global KeyRight := RegGet("Right", DefRight)
+Global KeyClick := RegGet("Click", DefClick)
+Global KeyRightClick := RegGet("RClick", DefRClick)
 
 ; --- GUI DESIGN ---
-MyGui := Gui("-MinimizeBox -MaximizeBox", "MouseKeys Pro | v4.2")
+MyGui := Gui("-MinimizeBox -MaximizeBox", "MouseKeys Pro | v4.3")
 MyGui.SetFont("s10 w600", "Segoe UI")
 MyGui.BackColor := "0xFFFFFF"
 
@@ -58,7 +65,7 @@ EditStart := MyGui.Add("Edit", "x+15 yp-3 w65 -VScroll -Multi", NormalSpeed)
 MyGui.Add("Text", "xp-82 yp+35", "Max Speed:")
 EditMax := MyGui.Add("Edit", "x+19 yp-3 w65 -VScroll -Multi", MaxSpeed)
 MyGui.Add("Text", "xp-82 yp+35", "Acceleration:")
-EditAcc := MyGui.Add("Edit", "x+13 yp-3 w65 -VScroll -Multi", Acceleration)
+EditAcc := MyGui.Add("Edit", "x+13 yp-3 w65 -VScroll -Multi", Format("{:0.2f}", Acceleration))
 MyGui.Add("Text", "xp-82 yp+35", "Smoothness:")
 EditCurve := MyGui.Add("Edit", "x+16 yp-3 w65 -VScroll -Multi", AccCurve)
 
@@ -125,17 +132,17 @@ ResetDefaults(*) {
 
 ApplySettings(*) {
     Global
-    IniWrite(BindToggle.Value, SettingsFile, "Keys", "Toggle")
-    IniWrite(EditStart.Value, SettingsFile, "Speed", "Start")
-    IniWrite(EditMax.Value, SettingsFile, "Speed", "Max")
-    IniWrite(Round(Float(EditAcc.Value), 2), SettingsFile, "Speed", "Acc")
-    IniWrite(EditCurve.Value, SettingsFile, "Speed", "Curve")
-    IniWrite(BindUp.Value, SettingsFile, "Keys", "Up")
-    IniWrite(BindDown.Value, SettingsFile, "Keys", "Down")
-    IniWrite(BindLeft.Value, SettingsFile, "Keys", "Left")
-    IniWrite(BindRight.Value, SettingsFile, "Keys", "Right")
-    IniWrite(BindClick.Value, SettingsFile, "Keys", "Click")
-    IniWrite(BindRClick.Value, SettingsFile, "Keys", "RClick")
+    RegWrite(BindToggle.Value, "REG_SZ", RegPath, "Toggle")
+    RegWrite(EditStart.Value, "REG_SZ", RegPath, "Start")
+    RegWrite(EditMax.Value, "REG_SZ", RegPath, "Max")
+    RegWrite(EditAcc.Value, "REG_SZ", RegPath, "Acc")
+    RegWrite(EditCurve.Value, "REG_SZ", RegPath, "Curve")
+    RegWrite(BindUp.Value, "REG_SZ", RegPath, "Up")
+    RegWrite(BindDown.Value, "REG_SZ", RegPath, "Down")
+    RegWrite(BindLeft.Value, "REG_SZ", RegPath, "Left")
+    RegWrite(BindRight.Value, "REG_SZ", RegPath, "Right")
+    RegWrite(BindClick.Value, "REG_SZ", RegPath, "Click")
+    RegWrite(BindRClick.Value, "REG_SZ", RegPath, "RClick")
     
     if CheckStartup.Value
         FileCreateShortcut(A_ScriptFullPath, StartupShortcut, , "/hide")
